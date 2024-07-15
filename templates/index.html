@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="../static/icons/icon.png">
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <title>Cenitex Cloud Hosting</title>
+</head>
+
+<body>
+    <div id="app" class="App bg-gray-100 min-h-screen relative">
+        <div class="header-banner h-10 bg-white w-full flex items-center justify-between px-4 py-2"
+            style="background-color: #1f1547; width: 100%;">
+            <div class="flex items-center">
+                <img src="../static/images/logo.png" alt="Logo" class="h-8 mr-4">
+            </div>
+            <div class="flex items-center">
+                <h3 id="userInfo" class="text-sm font-semibold text-gray-100"></h3>
+            </div>
+        </div>
+        <div class="header-banner h-60 bg-cover bg-center"
+            style="background-image: url('../static/images/banner.jpg');"></div>
+        <h1 class="text-2xl font-bold mb-0 mt-0 text-center text-white"
+            style="background-color: #1f1547; padding: 1rem 0; width: 100%;">Cenitex Cloud Hosting</h1>
+        <h3 class="text-sm mb-0 mt-0 text-center text-white"
+            style="background-color: #510778; padding: 1rem 0; width: 100%;">Effortlessly manage privileged user access,
+            embodying our commitment to security-focused tech solutions</h3>
+        <div class="p-6 flex justify-center">
+            <div class="max-w-6xl w-full">
+                <div id="dataContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Data will be dynamically inserted here -->
+                </div>
+                <button id="submitButton" class="submit-button mt-4">Submit</button>
+            </div>
+        </div>
+        <div id="loadingSpinner"
+            class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-50 z-50"
+            style="display: none;">
+            <div class="spinner"></div>
+        </div>
+        <br><br><br>
+        <footer style="background-color: #1f1547;" class="text-white py-4 text-center absolute bottom-0 w-full text-sm">
+            John Lee © 2024 Cenitex. All rights reserved.
+        </footer>
+    </div>
+    <script>
+        const BASE_URL = "https://azureexcelbewebapp.azurewebsites.net";
+        let data = [];
+        let approvals = {};
+        let lastApprovals = {};
+        let remarks = {};
+        let userInfo = "";
+
+        async function fetchData() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${BASE_URL}/load/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const fileContents = await response.json();
+                data = fileContents;
+                fileContents.forEach(item => {
+                    approvals[item.ID] = item.Approval;
+                    lastApprovals[item.ID] = item.LastApproval;
+                    remarks[item.ID] = item.Remark;
+                });
+                renderData();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function getUserInfo() {
+            try {
+                const response = await fetch('/.auth/me');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+                const payload = await response.json();
+                const name = (payload[0] && payload[0].user_id) ? payload[0].user_id : "anonymous";
+                userInfo = name;
+                updateUserInfoDisplay();
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                userInfo = "anonymous";
+                updateUserInfoDisplay();
+            }
+        }
+
+        function updateUserInfoDisplay() {
+            const userInfoElement = document.getElementById('userInfo');
+            const userInfoShort = `${userInfo.split(".")[0].charAt(0).toUpperCase() + userInfo.split(".")[0].slice(1)}`;
+            userInfoElement.textContent = window.innerWidth < 768 ? `Welcome, ${userInfoShort}` : userInfo;
+        }
+
+        function renderData() {
+            const container = document.getElementById('dataContainer');
+            container.innerHTML = '';
+            data.forEach(item => {
+                const itemElement = createItemElement(item);
+                container.appendChild(itemElement);
+            });
+        }
+
+        function createItemElement(item) {
+            const div = document.createElement('div');
+            div.className = 'bg-white rounded-lg p-4 hover:shadow-xl transition duration-300 ease-in-out border border-gray-300';
+            div.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center">
+                <label class="text-sm text-gray-800 font-semibold">Approval</label>
+                ${getApprovalIcon(approvals[item.ID])}
+                ${getApprovalIcon(lastApprovals[item.ID])}
+            </div>
+            <div class="relative" style="top: -15px;">
+                <select
+                    id="approval-${item.ID}"
+                    class="approval-dropdown absolute top-0 right-0"
+                >
+                    <option value="">Select</option>
+                    <option value="Y">Yes</option>
+                    <option value="N">No</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-2">
+            <div class="text-sm text-gray-800 font-semibold">
+                ${item.Firstname || item.Lastname ? `${item.Firstname} ${item.Lastname}` : item.Username}
+            </div>
+            <div class="text-gray-600" style="font-size: 0.63rem;">${item.Sheetname}</div>
+            <div class="text-gray-600" style="font-size: 0.63rem;">${item.Group}\\${item.Username}</div>
+        </div>
+        <div class="mt-2">
+            <hr class="mb-4 border-gray-300" />
+            <input
+                type="text"
+                id="remark-${item.ID}"
+                class="bg-gray-100 text-gray-800 text-sm border border-gray-300 rounded-md px-3 py-2 w-full resize-none"
+                placeholder="Enter your remarks here"
+                value="${remarks[item.ID] || ''}"
+            />
+        </div>
+    `;
+
+            const approvalDropdown = div.querySelector(`#approval-${item.ID}`);
+            approvalDropdown.value = approvals[item.ID] || '';
+            approvalDropdown.addEventListener('change', (e) => handleApprovalChange(item.ID, e.target.value));
+
+            const remarkInput = div.querySelector(`#remark-${item.ID}`);
+            remarkInput.addEventListener('input', (e) => handleRemarksChange(item.ID, e.target.value));
+
+            return div;
+        }
+
+        function getApprovalIcon(approval) {
+            if (approval === 'Y') return '<div class="green-icon"></div>';
+            if (approval === 'N') return '<div class="red-icon"></div>';
+            return '<div class="yellow-icon"></div>';
+        }
+
+        function handleApprovalChange(id, approval) {
+            approvals[id] = approval;
+        }
+
+        function handleRemarksChange(id, remark) {
+            remarks[id] = remark;
+        }
+
+        async function handleSubmit() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${BASE_URL}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ data: { approvals, remarks, userInfo } }),
+                });
+                const responseData = await response.json();
+                console.log('Data submitted successfully:', responseData);
+            } catch (error) {
+                console.error('Error submitting data:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(isLoading) {
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.style.display = isLoading ? 'flex' : 'none';
+        }
+
+        window.addEventListener('load', () => {
+            fetchData();
+            getUserInfo();
+            document.getElementById('submitButton').addEventListener('click', handleSubmit);
+            window.addEventListener('resize', updateUserInfoDisplay);
+        });
+    </script>
+</body>
+
+</html>
