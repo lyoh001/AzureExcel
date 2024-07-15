@@ -46,7 +46,7 @@
         </footer>
     </div>
     <script>
-        const BASE_URL = "https://azureexcelbewebapp.azurewebsites.net";
+        const BASE_URL = "http://localhost:8000";
         let data = [];
         let approvals = {};
         let lastApprovals = {};
@@ -113,47 +113,47 @@
             const div = document.createElement('div');
             div.className = 'bg-white rounded-lg p-4 hover:shadow-xl transition duration-300 ease-in-out border border-gray-300';
             div.innerHTML = `
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center">
-                <label class="text-sm text-gray-800 font-semibold">Approval</label>
-                ${getApprovalIcon(approvals[item.ID])}
-                ${getApprovalIcon(lastApprovals[item.ID])}
-            </div>
-            <div class="relative" style="top: -15px;">
-                <select
-                    id="approval-${item.ID}"
-                    class="approval-dropdown absolute top-0 right-0"
-                >
-                    <option value="">Select</option>
-                    <option value="Y">Yes</option>
-                    <option value="N">No</option>
-                </select>
-            </div>
-        </div>
-        <div class="mt-2">
-            <div class="text-sm text-gray-800 font-semibold">
-                ${item.Firstname || item.Lastname ? `${item.Firstname} ${item.Lastname}` : item.Username}
-            </div>
-            <div class="text-gray-600" style="font-size: 0.63rem;">${item.Sheetname}</div>
-            <div class="text-gray-600" style="font-size: 0.63rem;">${item.Group}\\${item.Username}</div>
-        </div>
-        <div class="mt-2">
-            <hr class="mb-4 border-gray-300" />
-            <input
-                type="text"
-                id="remark-${item.ID}"
-                class="bg-gray-100 text-gray-800 text-sm border border-gray-300 rounded-md px-3 py-2 w-full resize-none"
-                placeholder="Enter your remarks here"
-                value="${remarks[item.ID] || ''}"
-            />
-        </div>
-    `;
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center">
+                        <label class="text-sm text-gray-800 font-semibold">Approval</label>
+                        ${getApprovalIcon(approvals[item.ID])}
+                        ${getApprovalIcon(lastApprovals[item.ID])}
+                    </div>
+                    <div class="relative" style="top: -15px;">
+                        <select
+                            data-approval-id="${item.ID}"
+                            class="approval-dropdown absolute top-0 right-0"
+                        >
+                            <option value="">Select</option>
+                            <option value="Y">Yes</option>
+                            <option value="N">No</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="text-sm text-gray-800 font-semibold">
+                        ${item.Firstname || item.Lastname ? `${item.Firstname} ${item.Lastname}` : item.Username}
+                    </div>
+                    <div class="text-gray-600" style="font-size: 0.63rem;">${item.Sheetname}</div>
+                    <div class="text-gray-600" style="font-size: 0.63rem;">${item.Group}\\${item.Username}</div>
+                </div>
+                <div class="mt-2">
+                    <hr class="mb-4 border-gray-300" />
+                    <input
+                        type="text"
+                        data-remark-id="${item.ID}"
+                        class="bg-gray-100 text-gray-800 text-sm border border-gray-300 rounded-md px-3 py-2 w-full resize-none"
+                        placeholder="Enter your remarks here"
+                        value="${remarks[item.ID] || ''}"
+                    />
+                </div>
+            `;
 
-            const approvalDropdown = div.querySelector(`#approval-${item.ID}`);
+            const approvalDropdown = div.querySelector(`[data-approval-id="${item.ID}"]`);
             approvalDropdown.value = approvals[item.ID] || '';
             approvalDropdown.addEventListener('change', (e) => handleApprovalChange(item.ID, e.target.value));
 
-            const remarkInput = div.querySelector(`#remark-${item.ID}`);
+            const remarkInput = div.querySelector(`[data-remark-id="${item.ID}"]`);
             remarkInput.addEventListener('input', (e) => handleRemarksChange(item.ID, e.target.value));
 
             return div;

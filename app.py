@@ -24,8 +24,9 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 origins = [
-    "https://domain.com",
+    "http://127.0.0.1:8000",
     "http://localhost:8000",
+    "https://domain.com",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -38,11 +39,11 @@ app.add_middleware(
 downloaded_files_path = "/tmp/downloaded_files.txt"
 patterns = [
     ["CyberArk%20and%20DigiCert", "SOC"],
-    ["Security%20Tools", "SOC"],
-    ["SOC%202%20Services", "SOC"],
-    ["Windows", "SOC 2 - Windows Privileged User Access"],
-    ["Windows", "3402 - Windows Privileged User Access"],
-    ["Windows", "3150 - Windows Privileged User Access"],
+    # ["Security%20Tools", "SOC"],
+    # ["SOC%202%20Services", "SOC"],
+    # ["Windows", "SOC 2 - Windows Privileged User Access"],
+    # ["Windows", "3402 - Windows Privileged User Access"],
+    # ["Windows", "3150 - Windows Privileged User Access"],
 ]
 
 
@@ -111,7 +112,7 @@ async def download_file_async(
     file_name = next(
         f["name"] for f in folder_month_data["value"] if file_pattern in f["name"]
     )
-    file_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}/{month}/{folder_name}/Test - {file_name}?select=id,@microsoft.graph.downloadUrl"
+    file_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}/{month}/{folder_name}/{file_name}?select=id,@microsoft.graph.downloadUrl"
     file_data = await fetch_data(session, file_url, graph_api_headers)
     temp_file_path = await download_file(
         session, file_name, file_data["@microsoft.graph.downloadUrl"]
@@ -844,7 +845,7 @@ async def update_data(request: Request, data: dict):
             folder_name = patterns[file_index][0]
             async with aiofiles.open(file_path, "rb") as f:
                 file_content = await f.read()
-                upload_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}/{month}/{folder_name}/Test - {file_name}:/content"
+                upload_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}/{month}/{folder_name}/{file_name}:/content"
                 task = session.put(
                     url=upload_url,
                     headers=graph_api_headers,
