@@ -17,14 +17,57 @@ body::-webkit-scrollbar-thumb:hover {
     background: rgba(31, 21, 71, 0.8);
 }
 
+#loadingSpinner.hidden {
+    display: none;
+}
+
+#loadingSpinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
 .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #fff;
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.inner-ring, .outer-ring {
+    position: absolute;
+    border: 4px solid transparent;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+}
+
+.inner-ring {
+    width: 100%;
+    height: 100%;
+    border-top-color: #87179d;
     animation: spin 1s linear infinite;
-    margin: 20px auto;
+}
+
+.outer-ring {
+    top: -10px;
+    left: -10px;
+    width: 80px;
+    height: 80px;
+    border-top-color: #00b3aa;
+    animation: spin 1.5s linear infinite reverse;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .approval-dropdown {
@@ -87,7 +130,6 @@ body::-webkit-scrollbar-thumb:hover {
     }
 }
 
-/* Additional styles */
 .bg-gray-100 {
     background-color: #f7fafc;
 }

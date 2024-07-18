@@ -836,26 +836,26 @@ async def update_data(request: Request, data: dict):
             modification_tasks.append(task)
         await asyncio.gather(*modification_tasks)
 
-        month = df["name"].iloc[0].replace(" ", "%20")
-        upload_tasks = []
-        for file_index, file_path in enumerate(
-            downloaded_files[: len(downloaded_files) // 2]
-        ):
-            file_name = os.path.basename(file_path)
-            folder_name = patterns[file_index][0]
-            async with aiofiles.open(file_path, "rb") as f:
-                file_content = await f.read()
-                upload_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}/{month}/{folder_name}/{file_name}:/content"
-                task = session.put(
-                    url=upload_url,
-                    headers=graph_api_headers,
-                    data=file_content,
-                )
-                upload_tasks.append(task)
-        upload_responses = await asyncio.gather(*upload_tasks)
-        for resp in upload_responses:
-            if resp.status != 200:
-                return {"message": "Error occurred while uploading the file"}
+        # month = df["name"].iloc[0].replace(" ", "%20")
+        # upload_tasks = []
+        # for file_index, file_path in enumerate(
+        #     downloaded_files[: len(downloaded_files) // 2]
+        # ):
+        #     file_name = os.path.basename(file_path)
+        #     folder_name = patterns[file_index][0]
+        #     async with aiofiles.open(file_path, "rb") as f:
+        #         file_content = await f.read()
+        #         upload_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}/{month}/{folder_name}/{file_name}:/content"
+        #         task = session.put(
+        #             url=upload_url,
+        #             headers=graph_api_headers,
+        #             data=file_content,
+        #         )
+        #         upload_tasks.append(task)
+        # upload_responses = await asyncio.gather(*upload_tasks)
+        # for resp in upload_responses:
+        #     if resp.status != 200:
+        #         return {"message": "Error occurred while uploading the file"}
 
     return {"message": "Data updated and uploaded successfully"}
 
