@@ -40,7 +40,7 @@ downloaded_files_path = "/tmp/downloaded_files.txt"
 patterns = [
     ["CyberArk%20and%20DigiCert", "SOC"],
     ["Security%20Tools", "SOC"],
-    ["SOC%202%20Services", "SOC"],
+    # ["SOC%202%20Services", "SOC"],
     # ["Windows", "SOC 2 - Windows Privileged User Access"],
     # ["Windows", "3402 - Windows Privileged User Access"],
     # ["Windows", "3150 - Windows Privileged User Access"],
