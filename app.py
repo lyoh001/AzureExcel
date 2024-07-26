@@ -40,10 +40,10 @@ downloaded_files_path = "/tmp/downloaded_files.txt"
 patterns = [
     ["CyberArk%20and%20DigiCert", "SOC"],
     ["Security%20Tools", "SOC"],
-    # ["SOC%202%20Services", "SOC"],
-    # ["Windows", "SOC 2 - Windows Privileged User Access"],
-    # ["Windows", "3402 - Windows Privileged User Access"],
-    # ["Windows", "3150 - Windows Privileged User Access"],
+    ["SOC%202%20Services", "SOC"],
+    ["Windows", "SOC 2 - Windows Privileged User Access"],
+    ["Windows", "3402 - Windows Privileged User Access"],
+    ["Windows", "3150 - Windows Privileged User Access"],
 ]
 
 
@@ -118,6 +118,30 @@ async def download_file_async(
         session, file_name, file_data["@microsoft.graph.downloadUrl"]
     )
     return temp_file_path
+
+
+async def send_files_to_logic_app(downloaded_files):
+    url = os.environ["LOGIC_APP_URL"]
+    attachments = []
+    for file_index, file_path in enumerate(
+        downloaded_files[: len(downloaded_files) // 2]
+    ):
+        file_name = os.path.basename(file_path)
+        folder_name = patterns[file_index][0]
+        async with aiofiles.open(file_path, "rb") as file:
+            content = await file.read()
+            encoded_content = base64.b64encode(content).decode("utf-8")
+
+        attachments.append(
+            {"name": file_name, "folder": folder_name, "content": encoded_content}
+        )
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            url=url,
+            json={"attachments": attachments},
+        ) as response:
+            print(f"Logic App response status: {response.status}")
 
 
 def save_downloaded_files_to_file(downloaded_files):
@@ -256,7 +280,7 @@ async def load():
                 ]
             )
         )
-        drive_id, url = os.environ["DRIVE_ID"], os.environ["URL"]
+        drive_id, url = os.environ["DRIVE_ID"], os.environ["SA_URL"]
         folder_url = (
             f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}:/children"
         )
@@ -800,7 +824,7 @@ async def update_data(request: Request, data: dict):
                 ]
             )
         )
-        drive_id, url = os.environ["DRIVE_ID"], os.environ["URL"]
+        drive_id, url = os.environ["DRIVE_ID"], os.environ["SA_URL"]
         folder_url = (
             f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{url}:/children"
         )
@@ -836,6 +860,10 @@ async def update_data(request: Request, data: dict):
             modification_tasks.append(task)
         await asyncio.gather(*modification_tasks)
 
+        # Sending Files to Logic App
+        await send_files_to_logic_app(downloaded_files)
+
+        # Sending Files to Share Point
         # month = df["name"].iloc[0].replace(" ", "%20")
         # upload_tasks = []
         # for file_index, file_path in enumerate(
