@@ -35,8 +35,8 @@ body::-webkit-scrollbar-thumb:hover {
 
 .spinner {
     position: relative;
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
 }
 
 .inner-ring, .outer-ring {
@@ -55,8 +55,8 @@ body::-webkit-scrollbar-thumb:hover {
 .outer-ring {
     top: -10px;
     left: -10px;
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     border-top-color: #00b3aa;
     animation: spin 1.5s linear infinite reverse;
 }
