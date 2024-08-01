@@ -118,7 +118,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center">
                         <label class="text-sm text-gray-800 font-semibold">Approval</label>
-                        ${getApprovalIcon(approvals[item.ID])}
+                        <div id="approval-icon-${item.ID}">${getApprovalIcon(approvals[item.ID])}</div>
                         ${getApprovalIcon(lastApprovals[item.ID])}
                     </div>
                     <div class="relative" style="top: -15px;">
@@ -169,6 +169,8 @@
 
         function handleApprovalChange(id, approval) {
             approvals[id] = approval;
+            const approvalIcon = document.getElementById(`approval-icon-${id}`);
+            approvalIcon.innerHTML = getApprovalIcon(approval);
         }
 
         function handleRemarksChange(id, remark) {
