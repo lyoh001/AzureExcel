@@ -3,7 +3,7 @@ import base64
 import functools
 import os
 import tempfile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 
 import aiofiles
@@ -164,6 +164,99 @@ def load_downloaded_files_from_file():
     return None
 
 
+def process_sheet_sync(
+    file_index,
+    file_path_current,
+    file_path_previous,
+    sheet_pattern,
+    column_indices,
+    reviewer_name,
+    remove_lastname,
+):
+    sheet_index_previous = [
+        index
+        for index, name in enumerate(pd.ExcelFile(file_path_previous).sheet_names)
+        if sheet_pattern in name.lower()
+    ][0]
+    sheet_name_previous = pd.ExcelFile(file_path_previous).sheet_names[
+        sheet_index_previous
+    ]
+    df_previous = pd.read_excel(file_path_previous, sheet_name=sheet_name_previous)
+    df_previous.replace({np.nan: ""}, inplace=True)
+    df_previous["ID"] = "ID"
+    df_previous = df_previous[["ID"] + list(df_previous.columns[:-1])]
+    df_previous = df_previous[
+        df_previous.iloc[:, column_indices[0]].str.lower().str.contains(reviewer_name)
+    ].iloc[
+        :,
+        column_indices[1:],
+    ]
+    df_previous.columns = [
+        "ID",
+        "Group",
+        "Username",
+        "Firstname",
+        "Lastname",
+        "LastApproval",
+        "Remark",
+    ]
+    df_previous = df_previous.iloc[:, [1, 2, 3, 5]]
+
+    sheet_index_current = [
+        index
+        for index, name in enumerate(pd.ExcelFile(file_path_current).sheet_names)
+        if sheet_pattern in name.lower()
+    ][0]
+    sheet_name_current = pd.ExcelFile(file_path_current).sheet_names[
+        sheet_index_current
+    ]
+    df_current = pd.read_excel(file_path_current, sheet_name=sheet_name_current)
+    df_current.replace({np.nan: ""}, inplace=True)
+    df_current["ID"] = f"{file_index}/{sheet_index_current}/" + (
+        df_current.index + 2
+    ).astype(str)
+    df_current = df_current[["ID"] + list(df_current.columns[:-1])]
+    df_current = df_current[
+        df_current.iloc[:, column_indices[0]].str.lower().str.contains(reviewer_name)
+    ].iloc[
+        :,
+        column_indices[1:],
+    ]
+    df_current["Filename"] = file_path_current.split("/")[2].split(".")[0]
+    df_current["Sheetname"] = sheet_name_current
+    df_current.columns = [
+        "ID",
+        "Group",
+        "Username",
+        "Firstname",
+        "Lastname",
+        "Approval",
+        "Remark",
+        "Filename",
+        "Sheetname",
+    ]
+    df = pd.merge(
+        left=df_current,
+        right=df_previous,
+        left_on=[
+            df_current.columns[1],
+            df_current.columns[2],
+            df_current.columns[3],
+        ],
+        right_on=[
+            df_previous.columns[0],
+            df_previous.columns[1],
+            df_previous.columns[2],
+        ],
+        how="left",
+        indicator=False,
+    )
+    if remove_lastname:
+        df["Lastname"] = ""
+    df.replace({np.nan: ""}, inplace=True)
+    return df
+
+
 async def process_sheet_async(
     file_index,
     file_path_current,
@@ -173,97 +266,18 @@ async def process_sheet_async(
     reviewer_name,
     remove_lastname,
 ):
-    def process_sheet_sync():
-        sheet_index_previous = [
-            index
-            for index, name in enumerate(pd.ExcelFile(file_path_previous).sheet_names)
-            if sheet_pattern in name.lower()
-        ][0]
-        sheet_name_previous = pd.ExcelFile(file_path_previous).sheet_names[
-            sheet_index_previous
-        ]
-        df_previous = pd.read_excel(file_path_previous, sheet_name=sheet_name_previous)
-        df_previous.replace({np.nan: ""}, inplace=True)
-        df_previous["ID"] = "ID"
-        df_previous = df_previous[["ID"] + list(df_previous.columns[:-1])]
-        df_previous = df_previous[
-            df_previous.iloc[:, column_indices[0]]
-            .str.lower()
-            .str.contains(reviewer_name)
-        ].iloc[
-            :,
-            column_indices[1:],
-        ]
-        df_previous.columns = [
-            "ID",
-            "Group",
-            "Username",
-            "Firstname",
-            "Lastname",
-            "LastApproval",
-            "Remark",
-        ]
-        df_previous = df_previous.iloc[:, [1, 2, 3, 5]]
-
-        sheet_index_current = [
-            index
-            for index, name in enumerate(pd.ExcelFile(file_path_current).sheet_names)
-            if sheet_pattern in name.lower()
-        ][0]
-        sheet_name_current = pd.ExcelFile(file_path_current).sheet_names[
-            sheet_index_current
-        ]
-        df_current = pd.read_excel(file_path_current, sheet_name=sheet_name_current)
-        df_current.replace({np.nan: ""}, inplace=True)
-        df_current["ID"] = f"{file_index}/{sheet_index_current}/" + (
-            df_current.index + 2
-        ).astype(str)
-        df_current = df_current[["ID"] + list(df_current.columns[:-1])]
-        df_current = df_current[
-            df_current.iloc[:, column_indices[0]]
-            .str.lower()
-            .str.contains(reviewer_name)
-        ].iloc[
-            :,
-            column_indices[1:],
-        ]
-        df_current["Filename"] = file_path_current.split("/")[2].split(".")[0]
-        df_current["Sheetname"] = sheet_name_current
-        df_current.columns = [
-            "ID",
-            "Group",
-            "Username",
-            "Firstname",
-            "Lastname",
-            "Approval",
-            "Remark",
-            "Filename",
-            "Sheetname",
-        ]
-        df = pd.merge(
-            left=df_current,
-            right=df_previous,
-            left_on=[
-                df_current.columns[1],
-                df_current.columns[2],
-                df_current.columns[3],
-            ],
-            right_on=[
-                df_previous.columns[0],
-                df_previous.columns[1],
-                df_previous.columns[2],
-            ],
-            how="left",
-            indicator=False,
-        )
-        if remove_lastname:
-            df["Lastname"] = ""
-        df.replace({np.nan: ""}, inplace=True)
-        return df
-
-    with ThreadPoolExecutor() as executor:
-        return await asyncio.get_event_loop().run_in_executor(
-            executor, process_sheet_sync
+    loop = asyncio.get_event_loop()
+    with ProcessPoolExecutor() as executor:
+        return await loop.run_in_executor(
+            executor,
+            process_sheet_sync,
+            file_index,
+            file_path_current,
+            file_path_previous,
+            sheet_pattern,
+            column_indices,
+            reviewer_name,
+            remove_lastname,
         )
 
 
