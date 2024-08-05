@@ -42,8 +42,8 @@ patterns = [
     ["Security%20Tools", "SOC"],
     ["SOC%202%20Services", "SOC"],
     ["Windows", "SOC 2 - Windows Privileged User Access"],
-    # ["Windows", "3402 - Windows Privileged User Access"],
-    # ["Windows", "3150 - Windows Privileged User Access"],
+    ["Windows", "3402 - Windows Privileged User Access"],
+    ["Windows", "3150 - Windows Privileged User Access"],
 ]
 
 
